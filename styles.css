@@ -1,0 +1,75 @@
+/* Reset basic styles for consistency */
+.plx-code-block-wrapper {
+  margin: 1em 0;
+  position: relative;
+}
+
+/* Clean action bar with better height */
+.plx-action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #1e1e1e;
+  border-radius: 6px 6px 0 0;
+  padding: 0;
+  height: 32px; /* Increased height for better visual */
+}
+
+/* Language tag with more padding */
+.plx-lang-tag {
+  cursor: pointer !important;
+  transition: background-color 0.2s ease;
+  z-index: 10;
+  border-radius: 6px 0 0 0 !important;
+  font-weight: bold !important;
+  padding: 4px 12px; /* More horizontal padding */
+  display: flex; 
+  align-items: center;
+  height: 100%;
+  font-size: 0.85rem; /* Slightly larger font */
+  margin-right: auto;
+}
+
+/* Language tag when collapsed */
+.plx-lang-tag.plx-collapsed {
+  background-color: #21B8CD !important;
+  color: black !important;
+}
+
+/* Hide the regular info when collapsed */
+.plx-lang-tag.plx-collapsed + .plx-collapsed-info {
+  display: flex !important;
+}
+
+/* Inline collapsed info styling with better spacing */
+.plx-collapsed-info {
+  display: none;
+  align-items: center;
+  margin-left: 12px; /* More space from language tag */
+  color: #eee;
+  font-family: monospace;
+  font-size: 0.8rem; /* Slightly larger */
+}
+
+/* Hide the redundant line info totally when collapsed */
+.plx-line-info {
+  display: none !important;
+}
+
+/* Copy button styling with better spacing */
+.plx-copy-button,
+.copy-button {
+  height: 24px !important; /* Larger */
+  width: 24px !important;
+  padding: 2px !important;
+  margin-right: 8px; /* More space from edge */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Remove any extra padding/margins from pre */
+.plx-code-block-wrapper pre {
+  margin-top: 0 !important;
+  border-top-left-radius: 0 !important;
+}
