@@ -15,6 +15,14 @@
   height: 32px; /* Increased height for better visual */
 }
 
+/* Theme support */
+.plx-theme-light .plx-action-bar {
+  background-color: #f0f0f0;
+  color: #333;
+  border: 1px solid #ddd;
+  border-bottom: none;
+}
+
 /* Language tag with more padding */
 .plx-lang-tag {
   cursor: pointer !important;
@@ -28,6 +36,12 @@
   height: 100%;
   font-size: 0.85rem; /* Slightly larger font */
   margin-right: auto;
+}
+
+/* Theme support for language tag */
+.plx-theme-light .plx-lang-tag {
+  background-color: #e0e0e0;
+  color: #333;
 }
 
 /* Language tag when collapsed */
@@ -51,6 +65,11 @@
   font-size: 0.8rem; /* Slightly larger */
 }
 
+/* Theme support for collapsed info */
+.plx-theme-light .plx-collapsed-info {
+  color: #444;
+}
+
 /* Hide the redundant line info totally when collapsed */
 .plx-line-info {
   display: none !important;
@@ -72,4 +91,368 @@
 .plx-code-block-wrapper pre {
   margin-top: 0 !important;
   border-top-left-radius: 0 !important;
+}
+
+/* Line numbers container */
+.plx-line-numbers {
+  position: absolute;
+  left: 0;
+  top: 32px; /* Match the action bar height */
+  bottom: 0;
+  width: 3rem;
+  background-color: #2a2a2a;
+  color: #888;
+  font-family: monospace;
+  text-align: right;
+  padding: 0.5rem 0.5rem 0.5rem 0;
+  border-right: 1px solid rgba(68, 68, 68, 0.5); /* More transparent border */
+  overflow: hidden;
+  user-select: none;
+  font-size: 0.8rem;
+  display: none; /* Hidden by default */
+}
+
+/* Theme support for line numbers */
+.plx-theme-light .plx-line-numbers {
+  background-color: #f8f8f8;
+  color: #999;
+  border-right: 1px solid #ddd;
+}
+
+/* When line numbers are enabled */
+.plx-line-numbers-enabled pre {
+  margin-left: 3rem !important;
+  width: calc(100% - 3rem) !important;
+}
+
+/* Actions menu */
+.plx-actions-menu {
+  position: absolute;
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  display: none;
+}
+
+/* Theme support for actions menu */
+.plx-theme-light .plx-actions-menu {
+  background-color: white;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.plx-actions-menu-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.plx-actions-menu-item:hover {
+  background-color: #444;
+}
+
+/* Theme support for actions menu items */
+.plx-theme-light .plx-actions-menu-item:hover {
+  background-color: #f0f0f0;
+}
+
+/* Keybinding display */
+.plx-keybinding {
+  background-color: #444;
+  color: #ccc;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  margin-left: auto;
+}
+
+/* Theme support for keybindings */
+.plx-theme-light .plx-keybinding {
+  background-color: #e0e0e0;
+  color: #555;
+}
+
+/* Fade animation for copy confirmation */
+.plx-fade {
+  animation: plx-fade 1.5s ease;
+}
+
+@keyframes plx-fade {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Floating notification container */
+.plx-floating-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 100000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+/* Individual floating notification */
+.plx-floating-notification {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(25, 25, 25, 0.85);
+  color: #fff;
+  border-left: 3px solid #21B8CD;
+  border-radius: 4px;
+  padding: 10px 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 14px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  max-width: 320px;
+  backdrop-filter: blur(4px);
+  transform: translateX(100%);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Light theme variant */
+.plx-theme-light .plx-floating-notification {
+  background-color: rgba(255, 255, 255, 0.95);
+  color: #333;
+  border-left: 3px solid #21B8CD;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Show animation */
+.plx-floating-notification.plx-show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* Hide animation */
+.plx-floating-notification.plx-hide {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+/* Notification icon and message styling */
+.plx-notification-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #21B8CD;
+}
+
+.plx-notification-message {
+  flex: 1;
+}
+
+/* Legacy message style - kept for backward compatibility */
+.plx-copy-message {
+  display: none !important; /* Ensure old messages are hidden */
+}
+
+/* Specific Gemini Fixes */
+/* Make sure Gemini's code blocks are properly styled */
+code-block .code-block {
+  position: relative !important; /* For proper positioning of menus and messages */
+  border-top: none !important; /* Remove any top border that might cause a line */
+}
+
+code-block .plx-action-bar {
+  position: relative !important;
+  z-index: 10 !important;
+  margin-bottom: 0 !important; /* Ensure no gap between action bar and code */
+  border-bottom: none !important; /* Remove any bottom border */
+}
+
+code-block .plx-copy-button svg,
+code-block .plx-actions-button svg {
+  fill: currentColor !important;
+}
+
+code-block .plx-actions-menu {
+  position: fixed !important; /* Use fixed positioning for Gemini */
+  z-index: 1000 !important; /* Ensure it appears on top */
+}
+
+/* No longer need specific styles for Gemini's copy message as we use floating notifications */
+code-block .plx-copy-message {
+  display: none !important;
+}
+
+/* Style fixes for the copy button in Gemini */
+code-block .plx-copy-button {
+  background-color: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  color: #aaa !important;
+}
+
+code-block .plx-copy-button:hover {
+  color: white !important;
+}
+
+/* Additional fixes for the black line in Gemini code blocks */
+code-block pre {
+  border-top: none !important;
+  margin-top: 0 !important;
+  box-shadow: none !important;
+  background-clip: padding-box !important; /* Prevent background from bleeding through borders */
+}
+
+code-block .code-block-decoration {
+  border-bottom: none !important;
+}
+
+code-block .code-block > div {
+  border-top: none !important;
+  border-bottom: none !important;
+  border-left: none !important; /* Remove left border causing vertical line */
+  border-right: none !important;
+}
+
+/* Fix for the action bar and pre element connection */
+code-block .plx-action-bar + pre,
+code-block .code-block > pre {
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-left: none !important; /* Remove left borders */
+  margin-left: 0 !important; /* Remove any left margin */
+}
+
+/* Remove vertical lines and borders from code elements */
+code-block pre * {
+  border-left: none !important;
+  box-shadow: none !important;
+}
+
+/* Fix for numbers column causing vertical line */
+code-block .line-numbers, 
+code-block [class*="line-number"],
+code-block [class*="gutter"] {
+  border-right: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* Fix for JS/JSON highlighting creating lines */
+code-block[language="javascript"] pre,
+code-block[language="json"] pre,
+code-block pre {
+  border-top: none !important;
+  border-left: none !important;
+  box-shadow: none !important;
+}
+
+/* Specific fixes for Gemini's line numbers and vertical bar */
+code-block .gc-prism-code-line-number-gutter,
+code-block .code-block [data-line-number],
+code-block .prism-code [class*="linenumber"],
+code-block .code-block [class*="gutter-"],
+code-block .code-block [class*="syntax-"] {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-right: none !important;
+}
+
+/* Target the left gutter area in code blocks that typically shows the dark vertical bar */
+code-block .code-block pre > div > div:first-child,
+code-block .code-block pre > div > table > tbody > tr > td:first-child {
+  border: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Handle the line decoration elements that could create vertical bars */
+code-block .code-block [class*="line-decoration"],
+code-block .code-block [class*="token-line"] {
+  border-left: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure no unexpected margins or padding create visual spaces */
+code-block pre,
+code-block pre code {
+  border-left: none !important;
+  padding-left: 0.5rem !important; /* Consistent padding */
+}
+
+/* Completely hide the gutter column in Gemini code blocks */
+code-block[data-plx-processed="true"] .code-block pre > div > div:first-child,
+code-block[data-plx-processed="true"] .code-block pre > div:first-child,
+code-block[data-plx-processed="true"] .code-block pre table td:first-child,
+code-block[data-plx-processed="true"] .code-block [class*="line-number-gutter"],
+code-block .code-block[data-plx-processed="true"] pre > div > div:first-child,
+code-block .code-block[data-plx-processed="true"] pre > div:first-child,
+code-block .code-block[data-plx-processed="true"] pre table td:first-child {
+  display: none !important;
+  width: 0 !important;
+  max-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+}
+
+/* Adjust the main content column to take full width */
+code-block[data-plx-processed="true"] .code-block pre > div > div:nth-child(2),
+code-block[data-plx-processed="true"] .code-block pre > div:nth-child(2),
+code-block[data-plx-processed="true"] .code-block pre table td:nth-child(2),
+code-block .code-block[data-plx-processed="true"] pre > div > div:nth-child(2),
+code-block .code-block[data-plx-processed="true"] pre > div:nth-child(2),
+code-block .code-block[data-plx-processed="true"] pre table td:nth-child(2) {
+  width: 100% !important;
+  padding-left: 1rem !important;
+}
+
+/* Handle any scrolling issues */
+code-block .code-block pre {
+  overflow-x: auto !important;
+}
+
+/* Additional styles for notification positioning and responsiveness */
+#plx-floating-notifications {
+  z-index: 10000000 !important; /* Extremely high z-index to ensure it's above everything */
+}
+
+/* Mobile responsiveness for notifications */
+@media screen and (max-width: 768px) {
+  .plx-floating-container {
+    bottom: 16px;
+    right: 16px;
+    left: 16px;
+    align-items: center;
+  }
+  
+  .plx-floating-notification {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* Notification animations for focus management */
+.plx-floating-notification:focus {
+  outline: none;
+}
+
+/* Different colors for different notification types */
+.plx-floating-notification.plx-success {
+  border-left-color: #4caf50;
+}
+
+.plx-floating-notification.plx-warning {
+  border-left-color: #ff9800;
+}
+
+.plx-floating-notification.plx-error {
+  border-left-color: #f44336;
 }

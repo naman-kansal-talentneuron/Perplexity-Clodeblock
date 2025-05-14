@@ -1,7 +1,8 @@
 body {
-  width: 300px;
+  width: 320px;
   padding: 16px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #333;
 }
 
 .container {
@@ -13,6 +14,15 @@ body {
 h2 {
   margin: 0 0 8px 0;
   font-size: 18px;
+  color: #111;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+
+h3 {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #444;
 }
 
 .setting-row {
@@ -66,4 +76,114 @@ input:checked + .slider {
 
 input:checked + .slider:before {
   transform: translateX(20px);
+}
+
+/* New styles for additional UI elements */
+.platforms-section, .shortcuts-section {
+  margin-top: 12px;
+  background-color: #f8f8f8;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.platform-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.platform-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.platform-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #21B8CD;
+}
+
+.shortcut-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+code {
+  background-color: #eee;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+/* Slider for threshold */
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+input[type="range"] {
+  width: 120px;
+  height: 6px;
+  appearance: none;
+  background: #ddd;
+  border-radius: 3px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #21B8CD;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+#threshold-value {
+  font-family: monospace;
+  font-size: 12px;
+  color: #666;
+  width: 60px;
+}
+
+/* Dropdown styling */
+select {
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: white;
+  outline: none;
+}
+
+select:focus {
+  border-color: #21B8CD;
+}
+
+/* Footer */
+.footer {
+  margin-top: 16px;
+  border-top: 1px solid #eee;
+  padding-top: 12px;
+  text-align: center;
+}
+
+#reset-settings {
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#reset-settings:hover {
+  background-color: #e0e0e0;
 }

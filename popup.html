@@ -25,6 +25,69 @@
         <span class="slider"></span>
       </label>
     </div>
+    
+    <div class="setting-row">
+      <span>Show line numbers</span>
+      <label class="switch">
+        <input type="checkbox" id="line-numbers-toggle" aria-label="Toggle line numbers">
+        <span class="slider"></span>
+      </label>
+    </div>
+    
+    <div class="setting-row">
+      <span>Auto-collapse threshold</span>
+      <div class="slider-container">
+        <input type="range" min="5" max="100" value="20" id="collapse-threshold" aria-label="Set auto-collapse threshold">
+        <span id="threshold-value">20 lines</span>
+      </div>
+    </div>
+    
+    <div class="setting-row">
+      <span>Theme</span>
+      <select id="theme-select" aria-label="Select theme">
+        <option value="dark">Dark</option>
+        <option value="light">Light</option>
+        <option value="system">System default</option>
+      </select>
+    </div>
+
+    <div class="platforms-section">
+      <h3>Supported platforms</h3>
+      <div class="platform-list">
+        <div class="platform-item">
+          <input type="checkbox" id="perplexity-toggle" checked aria-label="Enable on Perplexity">
+          <label for="perplexity-toggle">Perplexity</label>
+        </div>
+        <div class="platform-item">
+          <input type="checkbox" id="gemini-toggle" checked aria-label="Enable on Gemini">
+          <label for="gemini-toggle">Gemini</label>
+        </div>
+        <div class="platform-item">
+          <input type="checkbox" id="chatgpt-toggle" checked aria-label="Enable on ChatGPT">
+          <label for="chatgpt-toggle">ChatGPT</label>
+        </div>
+        <div class="platform-item">
+          <input type="checkbox" id="claude-toggle" checked aria-label="Enable on Claude">
+          <label for="claude-toggle">Claude</label>
+        </div>
+      </div>
+    </div>
+    
+    <div class="shortcuts-section">
+      <h3>Keyboard shortcuts</h3>
+      <div class="shortcut-row">
+        <span>Toggle all code blocks:</span>
+        <code>Alt+C</code>
+      </div>
+      <div class="shortcut-row">
+        <span>Copy current code:</span>
+        <code>Alt+X</code>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <button id="reset-settings">Reset to defaults</button>
+    </div>
   </div>
   <script src="popup.js"></script>
 </body>
