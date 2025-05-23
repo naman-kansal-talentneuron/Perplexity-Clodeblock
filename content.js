@@ -523,58 +523,103 @@ function showCopyMessage(codeBlock, message) {
 
 // Update the original ChatGPT processing function
 function processChatGPTCodeBlocks(settings) {
-  // More specific selector for ChatGPT code blocks
-  const codeBlocks = document.querySelectorAll('pre > div > div:last-child > code'); 
+  // Iterate over all <pre> elements that haven't been processed yet.
+  const unprocessedPreElements = document.querySelectorAll('pre:not([data-plx-processed])');
 
-  codeBlocks.forEach((codeElement) => {
-    const codeBlock = codeElement.closest('pre'); // Get the parent pre element
-    if (!codeBlock || codeBlock.hasAttribute('data-plx-processed')) {
-      return;
+  unprocessedPreElements.forEach((codeBlock) => { // codeBlock is now the <pre> element
+    // Heuristics to identify true ChatGPT code blocks
+    const firstChildDiv = codeBlock.firstElementChild;
+    const prevSiblingDiv = codeBlock.previousElementSibling;
+    let isLikelyCodeBlock = false;
+
+    // Common ChatGPT structure: <pre> has a first child <div> (header) containing buttons/spans.
+    // Or, the header div is an immediate sibling.
+    if (firstChildDiv && firstChildDiv.tagName === 'DIV' && firstChildDiv.querySelector('button, span')) { 
+        isLikelyCodeBlock = true;
+    } else if (prevSiblingDiv && prevSiblingDiv.tagName === 'DIV' && prevSiblingDiv.querySelector('button, span')) {
+        isLikelyCodeBlock = true;
+    } else if (codeBlock.classList.contains('hljs') || codeBlock.querySelector('.hljs')) { // Contains highlight.js classes
+        isLikelyCodeBlock = true;
+    } else if (codeBlock.closest('div[class*="markdown"]')) { // Often wrapped in a 'markdown' div
+        isLikelyCodeBlock = true;
+    }
+    
+    // Skip if already inside a plx-code-block-wrapper (e.g., nested pre or reprocessing)
+    if (codeBlock.closest('.plx-code-block-wrapper')) {
+        if (!codeBlock.hasAttribute('data-plx-processed')) {
+             codeBlock.setAttribute('data-plx-processed', 'true');
+        }
+        return; 
     }
 
+    // Skip very short <pre> tags if not otherwise identified (e.g. single-line non-code <pre>)
+    if (!isLikelyCodeBlock && codeBlock.textContent.split('\n').length < 2 && codeBlock.children.length === 0) {
+        return;
+    }
+    
     codeBlock.setAttribute('data-plx-processed', 'true');
 
-    // Find the language tag in ChatGPT's code block
-    // ChatGPT language tag is usually a div sibling to the div containing the code
-    let langTagElement = null;
     let langText = 'Code';
-    // The language tag is typically in a div that's a sibling of the div containing the 'Copy code' button
-    const potentialLangTagParent = codeBlock.querySelector('div:first-child');
-    if (potentialLangTagParent && potentialLangTagParent.children.length > 1) {
-        // Assuming the first child of this parent is the language tag
-        langTagElement = potentialLangTagParent.children[0];
-        if (langTagElement && langTagElement.tagName === 'DIV' && langTagElement.textContent.trim().length > 0 && langTagElement.textContent.trim().length < 20) { // Basic validation
-            langText = langTagElement.textContent.trim();
-            // Hide the original language tag element if needed
-            langTagElement.style.display = 'none';
-        } else {
-            langTagElement = null; // Reset if not a valid language tag
+    let originalHeaderElement = null;
+
+    // Attempt to find language and original header (div containing lang and copy button)
+    // Strategy 1: Header div as the first child of <pre>
+    if (firstChildDiv && firstChildDiv.tagName === 'DIV') {
+        const potentialLangNameElement = firstChildDiv.children[0];
+        if (potentialLangNameElement && 
+            (potentialLangNameElement.tagName === 'SPAN' || potentialLangNameElement.tagName === 'DIV') &&
+            potentialLangNameElement.textContent.trim().length > 0 && 
+            potentialLangNameElement.textContent.trim().length < 30 && 
+            !potentialLangNameElement.querySelector('svg') && // Avoid picking up SVG icons as language
+            firstChildDiv.querySelector('button')) { // Header should have a button (e.g. copy)
+            langText = potentialLangNameElement.textContent.trim();
+            originalHeaderElement = firstChildDiv;
+        } else if (firstChildDiv.querySelector('button') && (!potentialLangNameElement || potentialLangNameElement.textContent.trim().length === 0)) {
+            // If there's a button but no clear language, it's still likely the header.
+            langText = 'Code'; // Default if language name is empty or not found
+            originalHeaderElement = firstChildDiv;
         }
     }
 
+    // Strategy 2: Header div as immediate previous sibling of <pre>
+    if (!originalHeaderElement && prevSiblingDiv && prevSiblingDiv.tagName === 'DIV') {
+        const potentialLangNameElement = prevSiblingDiv.children[0];
+         if (potentialLangNameElement && 
+            (potentialLangNameElement.tagName === 'SPAN' || potentialLangNameElement.tagName === 'DIV') &&
+            potentialLangNameElement.textContent.trim().length > 0 && 
+            potentialLangNameElement.textContent.trim().length < 30 &&
+            !potentialLangNameElement.querySelector('svg') &&
+            prevSiblingDiv.querySelector('button')) {
+            langText = potentialLangNameElement.textContent.trim();
+            originalHeaderElement = prevSiblingDiv;
+        } else if (prevSiblingDiv.querySelector('button') && (!potentialLangNameElement || potentialLangNameElement.textContent.trim().length === 0)) {
+            langText = 'Code';
+            originalHeaderElement = prevSiblingDiv;
+        }
+    }
+    
+    if (originalHeaderElement) {
+        originalHeaderElement.style.setProperty('display', 'none', 'important');
+    }
 
-    // Create our custom language tag
     const customLangTag = document.createElement('div');
     customLangTag.className = 'plx-lang-tag';
     customLangTag.textContent = langText;
 
-    // Count lines from the code element itself
-    const lineCount = codeElement.textContent.split('\n').length;
+    const innerCode = codeBlock.querySelector('code');
+    const contentSource = (innerCode && innerCode.textContent.length > codeBlock.textContent.length * 0.7) ? innerCode : codeBlock;
+    const lineCount = contentSource.textContent.split('\n').length;
 
-    // Create wrapper
     const wrapper = document.createElement('div');
     wrapper.className = 'plx-code-block-wrapper';
     
-    // Create line info element
     const lineInfo = document.createElement('div');
     lineInfo.className = 'plx-line-info';
     lineInfo.textContent = `Code block (${lineCount} lines)`;
     
-    // Create action bar for language tag and buttons
     const actionBar = document.createElement('div');
     actionBar.className = 'plx-action-bar';
     
-    // Create copy button
     const copyButton = document.createElement('button');
     copyButton.className = 'plx-copy-button';
     copyButton.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -583,30 +628,26 @@ function processChatGPTCodeBlocks(settings) {
     </svg>`;
     copyButton.title = "Copy code";
     
-    // Insert wrapper and rearrange elements
     codeBlock.parentNode.insertBefore(wrapper, codeBlock);
     
-    // Add both lang tag and copy button to action bar
     actionBar.appendChild(customLangTag);
     actionBar.appendChild(copyButton);
     
-    // Add action bar, code block and line info to wrapper
     wrapper.appendChild(actionBar);
-    wrapper.appendChild(codeBlock);
+    wrapper.appendChild(codeBlock); // The <pre> element itself
     wrapper.appendChild(lineInfo);
     
-    // Style adjustments
     codeBlock.style.marginTop = '0';
-    codeBlock.style.borderTopLeftRadius = '0';
-    
-    // Create inline collapsed view
+    codeBlock.style.borderTopLeftRadius = '0'; // Ensure consistency if original header was part of border
+    codeBlock.style.borderTopRightRadius = '0';
+
+
     const collapsedInfo = createInlineCollapsedView(actionBar, customLangTag, lineCount);
     
-    // Add copy functionality
     copyButton.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      navigator.clipboard.writeText(codeElement.textContent).then(() => { // Use codeElement here
+      navigator.clipboard.writeText(contentSource.textContent).then(() => {
         const originalHTML = copyButton.innerHTML;
         copyButton.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -617,42 +658,39 @@ function processChatGPTCodeBlocks(settings) {
       });
     });
 
-    // Apply collapse by default if enabled
     if (collapseByDefault) {
       customLangTag.classList.add('plx-collapsed');
-      codeBlock.style.display = 'none'; // Hide the pre element
+      codeBlock.style.setProperty('display', 'none', 'important'); 
       lineInfo.style.display = 'flex';
-      collapsedInfo.style.display = 'flex'; // Show inline info
+      collapsedInfo.style.display = 'flex'; 
     } else {
+      // Ensure it's visible if not collapsing by default, and apply !important
+      // Use 'block' as a sensible default. If ChatGPT uses flex/grid for <pre>, this might need adjustment
+      // or we might need to save and restore original display style.
+      codeBlock.style.setProperty('display', 'block', 'important'); 
       lineInfo.style.display = 'none';
-      collapsedInfo.style.display = 'none'; // Hide inline info
+      collapsedInfo.style.display = 'none'; 
     }
 
-    // Add toggle functionality
     customLangTag.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-
       const isCollapsed = customLangTag.classList.contains('plx-collapsed');
-
       if (isCollapsed) {
-        // Expand
         customLangTag.classList.remove('plx-collapsed');
-        codeBlock.style.display = 'block'; // Show the pre element
+        codeBlock.style.setProperty('display', 'block', 'important'); 
         lineInfo.style.display = 'none';
         collapsedInfo.style.display = 'none';
       } else {
-        // Collapse
         customLangTag.classList.add('plx-collapsed');
-        codeBlock.style.display = 'none'; // Hide the pre element
+        codeBlock.style.setProperty('display', 'none', 'important'); 
         lineInfo.style.display = 'flex';
         collapsedInfo.style.display = 'flex';
       }
     });
 
-    // Add line numbers and context menu to the codeBlock (pre element)
-    addLineNumbers(codeBlock, settings.showLineNumbers);
-    addContextMenu(codeBlock, actionBar, customLangTag);
+    addLineNumbers(codeBlock, settings.showLineNumbers); // codeBlock is the <pre> element
+    addContextMenu(codeBlock, actionBar, customLangTag); // codeBlock is the <pre> element
   });
 }
 
