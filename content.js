@@ -420,7 +420,24 @@ function showCopyMessage(codeBlock, message) {
     floatingContainer = document.createElement('div');
     floatingContainer.id = 'plx-floating-notifications';
     floatingContainer.className = 'plx-floating-container';
+    // Ensure high z-index and basic display properties for visibility
+    floatingContainer.style.zIndex = '999999'; 
+    floatingContainer.style.display = 'flex';
+    floatingContainer.style.flexDirection = 'column';
+    floatingContainer.style.position = 'fixed';
+    floatingContainer.style.bottom = '20px'; 
+    floatingContainer.style.right = '20px';
+    floatingContainer.style.gap = '10px'; // Consistent with typical flex container for notifications
     document.body.appendChild(floatingContainer);
+  } else {
+    // Ensure properties are also set if container already exists and might have been altered
+    floatingContainer.style.zIndex = '999999';
+    floatingContainer.style.display = 'flex';
+    floatingContainer.style.flexDirection = 'column';
+    floatingContainer.style.position = 'fixed';
+    floatingContainer.style.bottom = '20px';
+    floatingContainer.style.right = '20px';
+    floatingContainer.style.gap = '10px';
   }
   
   // Create a new notification element
@@ -479,43 +496,44 @@ function showCopyMessage(codeBlock, message) {
 
 // Update the original ChatGPT processing function
 function processChatGPTCodeBlocks(settings) {
-  // Find all code blocks in ChatGPT
-  const codeBlocks = document.querySelectorAll('pre');
-  
-  codeBlocks.forEach((codeBlock) => {
-    // Skip already processed code blocks
-    if (codeBlock.hasAttribute('data-plx-processed')) {
+  // More specific selector for ChatGPT code blocks
+  const codeBlocks = document.querySelectorAll('pre > div > div:last-child > code'); 
+
+  codeBlocks.forEach((codeElement) => {
+    const codeBlock = codeElement.closest('pre'); // Get the parent pre element
+    if (!codeBlock || codeBlock.hasAttribute('data-plx-processed')) {
       return;
     }
-    
-    // Mark as processed to avoid duplication
+
     codeBlock.setAttribute('data-plx-processed', 'true');
-    
+
     // Find the language tag in ChatGPT's code block
-    let langTag = codeBlock.querySelector('.flex.items-center.relative.text-gray-200');
+    // ChatGPT language tag is usually a div sibling to the div containing the code
+    let langTagElement = null;
     let langText = 'Code';
-    
-    if (langTag) {
-      // Extract the language name from the tag
-      langText = langTag.textContent.trim();
-      // Hide the original tag
-      langTag.style.display = 'none';
-    } else {
-      // Create a new language tag if none exists
-      langTag = document.createElement('div');
-      langTag.className = 'plx-lang-tag';
-      langTag.textContent = langText;
+    // The language tag is typically in a div that's a sibling of the div containing the 'Copy code' button
+    const potentialLangTagParent = codeBlock.querySelector('div:first-child');
+    if (potentialLangTagParent && potentialLangTagParent.children.length > 1) {
+        // Assuming the first child of this parent is the language tag
+        langTagElement = potentialLangTagParent.children[0];
+        if (langTagElement && langTagElement.tagName === 'DIV' && langTagElement.textContent.trim().length > 0 && langTagElement.textContent.trim().length < 20) { // Basic validation
+            langText = langTagElement.textContent.trim();
+            // Hide the original language tag element if needed
+            langTagElement.style.display = 'none';
+        } else {
+            langTagElement = null; // Reset if not a valid language tag
+        }
     }
-    
+
+
     // Create our custom language tag
     const customLangTag = document.createElement('div');
     customLangTag.className = 'plx-lang-tag';
     customLangTag.textContent = langText;
-    
-    // Find the code element and count lines
-    const codeElement = codeBlock.querySelector('code');
-    const lineCount = codeElement ? codeElement.textContent.split('\n').length : 0;
-    
+
+    // Count lines from the code element itself
+    const lineCount = codeElement.textContent.split('\n').length;
+
     // Create wrapper
     const wrapper = document.createElement('div');
     wrapper.className = 'plx-code-block-wrapper';
@@ -561,7 +579,7 @@ function processChatGPTCodeBlocks(settings) {
     copyButton.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      navigator.clipboard.writeText(codeBlock.textContent).then(() => {
+      navigator.clipboard.writeText(codeElement.textContent).then(() => { // Use codeElement here
         const originalHTML = copyButton.innerHTML;
         copyButton.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -571,41 +589,41 @@ function processChatGPTCodeBlocks(settings) {
         }, 1500);
       });
     });
-    
+
     // Apply collapse by default if enabled
     if (collapseByDefault) {
       customLangTag.classList.add('plx-collapsed');
-      codeBlock.style.display = 'none';
+      codeBlock.style.display = 'none'; // Hide the pre element
       lineInfo.style.display = 'flex';
       collapsedInfo.style.display = 'flex'; // Show inline info
     } else {
       lineInfo.style.display = 'none';
       collapsedInfo.style.display = 'none'; // Hide inline info
     }
-    
+
     // Add toggle functionality
     customLangTag.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      
+
       const isCollapsed = customLangTag.classList.contains('plx-collapsed');
-      
+
       if (isCollapsed) {
         // Expand
         customLangTag.classList.remove('plx-collapsed');
-        codeBlock.style.display = 'block';
+        codeBlock.style.display = 'block'; // Show the pre element
         lineInfo.style.display = 'none';
         collapsedInfo.style.display = 'none';
       } else {
         // Collapse
         customLangTag.classList.add('plx-collapsed');
-        codeBlock.style.display = 'none';
+        codeBlock.style.display = 'none'; // Hide the pre element
         lineInfo.style.display = 'flex';
         collapsedInfo.style.display = 'flex';
       }
     });
-    
-    // Add line numbers and context menu
+
+    // Add line numbers and context menu to the codeBlock (pre element)
     addLineNumbers(codeBlock, settings.showLineNumbers);
     addContextMenu(codeBlock, actionBar, customLangTag);
   });
@@ -614,29 +632,64 @@ function processChatGPTCodeBlocks(settings) {
 // Update the Claude processing function
 function processClaudeCodeBlocks(settings) {
   // Find all code blocks in Claude
-  const codeBlocks = document.querySelectorAll('pre');
-  
+  const codeBlocks = document.querySelectorAll('pre:not([data-plx-processed])'); // Select only unprocessed pre elements
+
   codeBlocks.forEach((codeBlock) => {
-    // Skip already processed code blocks
-    if (codeBlock.hasAttribute('data-plx-processed')) {
-      return;
-    }
-    
     // Mark as processed to avoid duplication
     codeBlock.setAttribute('data-plx-processed', 'true');
-    
-    // Claude often has a parent div with flex items that contains the language identifier
-    let langParent = codeBlock.parentElement;
-    let langElement = langParent ? langParent.querySelector('.bg-gray-100, .bg-gray-200, .bg-zinc-100, .bg-slate-100') : null;
-    let langText = 'Code';
-    
-    if (langElement && langElement !== codeBlock) {
-      // Extract the language name
-      langText = langElement.textContent.trim();
-      // Hide original
-      langElement.style.display = 'none';
+
+    // Claude's language tag is often a div sibling to the pre block, or within a shared parent
+    // Example structure: <div> [lang tag div] </div> <pre>...</pre>
+    // Or: <div> <div> [lang tag div] </div> <figure> <pre>...</pre> </figure> </div>
+    let langElement = null;
+    let langText = 'Code'; // Default language text
+
+    // Strategy 1: Check previous sibling of the <pre> tag's parent if <pre> is wrapped (e.g. in <figure>)
+    const preParent = codeBlock.parentElement;
+    if (preParent && preParent.previousElementSibling) {
+        const potentialLangTag = preParent.previousElementSibling;
+        // Basic validation for typical language tags
+        if (potentialLangTag.tagName === 'DIV' && potentialLangTag.textContent.trim().length > 0 && potentialLangTag.textContent.trim().length < 20 && !potentialLangTag.querySelector('pre')) {
+            langElement = potentialLangTag;
+        }
+    }
+
+    // Strategy 2: If not found, check previous sibling of the <pre> tag itself
+    if (!langElement && codeBlock.previousElementSibling) {
+        const potentialLangTag = codeBlock.previousElementSibling;
+        if (potentialLangTag.tagName === 'DIV' && potentialLangTag.textContent.trim().length > 0 && potentialLangTag.textContent.trim().length < 20 && !potentialLangTag.querySelector('pre')) {
+            langElement = potentialLangTag;
+        }
     }
     
+    // Strategy 3: Look for a div with specific styling if the above fail (more fragile)
+    // This is a fallback and might need adjustment based on Claude's actual class names for language tags
+    if (!langElement) {
+        const parentContainer = codeBlock.closest('div[class*="rounded-md"]'); // Common container for code blocks
+        if (parentContainer) {
+            const potentialTags = parentContainer.querySelectorAll('div:not(:has(pre))');
+            for (let tag of potentialTags) {
+                // Check if it's a simple text node, not containing other complex elements
+                if (tag.children.length === 0 && tag.textContent.trim().length > 0 && tag.textContent.trim().length < 20) {
+                     // Additional check: ensure it's not part of the toolbar or other UI elements by checking its position relative to the pre
+                    const preRect = codeBlock.getBoundingClientRect();
+                    const tagRect = tag.getBoundingClientRect();
+                    if (tagRect.bottom < preRect.top) { // Language tag is usually above the code block
+                        langElement = tag;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+
+    if (langElement) {
+      langText = langElement.textContent.trim();
+      // Hide the original language element if it's distinct and successfully identified
+      langElement.style.display = 'none';
+    }
+
     // Create our custom language tag
     const customLangTag = document.createElement('div');
     customLangTag.className = 'plx-lang-tag';
@@ -690,7 +743,7 @@ function processClaudeCodeBlocks(settings) {
     copyButton.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      navigator.clipboard.writeText(codeBlock.textContent).then(() => {
+      navigator.clipboard.writeText(codeBlock.textContent).then(() => { // codeBlock is the <pre> element
         const originalHTML = copyButton.innerHTML;
         copyButton.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -700,7 +753,7 @@ function processClaudeCodeBlocks(settings) {
         }, 1500);
       });
     });
-    
+
     // Apply collapse by default if enabled
     if (collapseByDefault) {
       customLangTag.classList.add('plx-collapsed');
@@ -711,14 +764,14 @@ function processClaudeCodeBlocks(settings) {
       lineInfo.style.display = 'none';
       collapsedInfo.style.display = 'none'; // Hide inline info
     }
-    
+
     // Add toggle functionality
     customLangTag.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      
+
       const isCollapsed = customLangTag.classList.contains('plx-collapsed');
-      
+
       if (isCollapsed) {
         // Expand
         customLangTag.classList.remove('plx-collapsed');
@@ -733,7 +786,7 @@ function processClaudeCodeBlocks(settings) {
         collapsedInfo.style.display = 'flex';
       }
     });
-    
+
     // Add line numbers and context menu
     addLineNumbers(codeBlock, settings.showLineNumbers);
     addContextMenu(codeBlock, actionBar, customLangTag);
@@ -742,37 +795,55 @@ function processClaudeCodeBlocks(settings) {
 
 // Update Gemini processing function
 function processGeminiCodeBlocks(settings) {
-  // Find all Gemini code blocks
-  const codeBlocks = document.querySelectorAll('code-block .code-block');
-  
-  codeBlocks.forEach((codeBlock) => {
-    // Skip already processed code blocks
-    if (codeBlock.hasAttribute('data-plx-processed')) {
-      return;
+  // Gemini code blocks are within a <code-block> custom element, then often within a .code-block div
+  // The actual <pre> can be nested further.
+  const geminiWrappers = document.querySelectorAll('code-block');
+
+  geminiWrappers.forEach((geminiWrapper) => {
+    // The <pre> element is what we're interested in.
+    // It might be directly inside .code-block or nested further.
+    const codeBlockRoot = geminiWrapper.querySelector('.code-block'); // This is the div that usually contains header and pre
+    if (!codeBlockRoot || codeBlockRoot.hasAttribute('data-plx-processed')) {
+        // If the root is already processed, or not found, skip.
+        // We mark the root to avoid reprocessing if the <pre> is found separately.
+        return;
+    }
+
+    const preElement = codeBlockRoot.querySelector('pre');
+    if (!preElement) {
+      return; // No pre element found in this wrapper
     }
     
-    // Mark as processed to avoid duplication
-    codeBlock.setAttribute('data-plx-processed', 'true');
-    
+    // Check if the preElement itself or its wrapper has been processed.
+    if (preElement.hasAttribute('data-plx-processed')) {
+        return;
+    }
+    preElement.setAttribute('data-plx-processed', 'true');
+    codeBlockRoot.setAttribute('data-plx-processed', 'true'); // Mark the wrapper as well
+
+
     // Find the header element and language tag
-    const header = codeBlock.querySelector('.code-block-decoration');
-    if (!header) return;
-    
-    // Find language label (first span in the header)
-    const langSpan = header.querySelector('span');
-    if (!langSpan) return;
+    // Gemini's language tag is usually in a div with class .code-block-decoration, often the first child of .code-block
+    const header = codeBlockRoot.querySelector('.code-block-decoration');
+    let langText = 'Code'; // Default
+
+    if (header) {
+      // The language is often in the first span or div inside the header
+      const langSpan = header.querySelector('span:first-child, div:first-child');
+      if (langSpan && langSpan.textContent.trim().length > 0) {
+        langText = langSpan.textContent.trim();
+      }
+      // Hide the original header as we replace it
+      header.style.display = 'none';
+    }
     
     // Create our custom language tag
     const langTag = document.createElement('div');
     langTag.className = 'plx-lang-tag';
-    langTag.textContent = langSpan.textContent;
-    
-    // Find the actual code element
-    const preElement = codeBlock.querySelector('pre');
-    if (!preElement) return;
-    
-    // Get line count
-    const codeElement = preElement.querySelector('code');
+    langTag.textContent = langText;
+
+    // Get line count from the pre's inner code or the pre itself
+    const codeElement = preElement.querySelector('code') || preElement;
     const lineCount = codeElement ? codeElement.textContent.split('\n').length : 0;
     
     // Create line info element
