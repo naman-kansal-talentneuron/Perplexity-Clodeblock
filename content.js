@@ -1534,5 +1534,3 @@ if (extensionEnabled) {
 // For this task, logs were specified for global, DOMContentLoaded, startObserver, MutationObserver, and processCodeBlocks.
 // The individual platform processing functions (processChatGPTCodeBlocks, etc.) were only modified to include a log *after* they are called from processCodeBlocks.
 // The one existing log "Perplexity Codeblock Extension loaded on: " + window.location.hostname is kept.
-
-[end of content.js]
