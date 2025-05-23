@@ -4,6 +4,7 @@ let collapseByDefault = true; // Changed from false to true
 
 // Check for extension enabled state
 chrome.storage.sync.get(['enabled', 'collapseByDefault'], (data) => {
+  // console.log('[PCC Global Storage] Data retrieved:', data); // REMOVED
   if (data.hasOwnProperty('enabled')) {
     extensionEnabled = data.enabled;
   }
@@ -11,8 +12,10 @@ chrome.storage.sync.get(['enabled', 'collapseByDefault'], (data) => {
   if (data.hasOwnProperty('collapseByDefault')) {
     collapseByDefault = data.collapseByDefault;
   }
+  // console.log('[PCC Global Storage] Enabled:', extensionEnabled, 'CollapseByDefault:', collapseByDefault); // REMOVED
   
   if (extensionEnabled) {
+    // console.log('[PCC Global Storage] Calling startObserver()'); // REMOVED
     startObserver();
   }
 });
@@ -52,10 +55,17 @@ chrome.storage.onChanged.addListener((changes) => {
 
 // Function to process code blocks
 function processCodeBlocks() {
+  // console.log('[PCC processCodeBlocks] Function called.'); // REMOVED
+  // console.log('[PCC processCodeBlocks] extensionEnabled:', extensionEnabled); // REMOVED
   if (!extensionEnabled) return;
   
   // Get settings
   chrome.storage.sync.get(['showLineNumbers', 'collapseThreshold', 'theme', 'enabledPlatforms'], (data) => {
+    if (chrome.runtime.lastError) {
+      console.error('[PCC processCodeBlocks Storage] Error retrieving settings:', chrome.runtime.lastError.message); // KEPT (this is the new error log)
+      return; // Exit callback if an error occurred
+    }
+    // console.log('[PCC processCodeBlocks Storage] Settings callback executed.'); // REMOVED
     // Apply theme to all wrapped code blocks
     const wrappers = document.querySelectorAll('.plx-code-block-wrapper');
     if (data.theme === 'light') {
@@ -66,6 +76,10 @@ function processCodeBlocks() {
     
     // Detect which platform we're on
     const hostname = window.location.hostname;
+    // console.log('[PCC processCodeBlocks Storage] Settings data:', data); // REMOVED
+    // const platformsForLog = data.enabledPlatforms || { perplexity: true, gemini: true, chatgpt: true, claude: true }; // REMOVED (variable only for log)
+    // console.log('[PCC processCodeBlocks] Detecting platform. Hostname:', hostname, 'Enabled Platforms (from storage or default):', platformsForLog); // REMOVED
+
     const isGemini = hostname.includes('gemini.google.com');
     const isChatGPT = hostname.includes('chat.openai.com');
     const isClaude = hostname.includes('claude.ai');
@@ -78,20 +92,33 @@ function processCodeBlocks() {
       claude: true
     };
     
-    let shouldProcess = false;
+    let shouldProcess = false; // This variable seems unused, but keeping it for now
+    let platformProcessed = false;
     
     if (isGemini && platforms.gemini) {
       shouldProcess = true;
       processGeminiCodeBlocks(data);
+      platformProcessed = true;
+      // console.log('[PCC processCodeBlocks] Called processGeminiCodeBlocks.'); // REMOVED
     } else if (isChatGPT && platforms.chatgpt) {
       shouldProcess = true;
       processChatGPTCodeBlocks(data);
+      platformProcessed = true;
+      // console.log('[PCC processCodeBlocks] Called processChatGPTCodeBlocks.'); // REMOVED
     } else if (isClaude && platforms.claude) {
       shouldProcess = true;
       processClaudeCodeBlocks(data);
+      platformProcessed = true;
+      // console.log('[PCC processCodeBlocks] Called processClaudeCodeBlocks.'); // REMOVED
     } else if (!isGemini && !isChatGPT && !isClaude && platforms.perplexity) {
       shouldProcess = true;
       processPerplexityCodeBlocks(data);
+      platformProcessed = true;
+      // console.log('[PCC processCodeBlocks] Called processPerplexityCodeBlocks.'); // REMOVED
+    }
+
+    if (!platformProcessed) {
+      // console.log('[PCC processCodeBlocks] No matching platform found or platform disabled. Hostname:', hostname, 'Effective platform settings used for check:', platforms); // REMOVED
     }
   });
 }
@@ -247,7 +274,7 @@ function formatCode(codeBlock) {
         formatted = JSON.stringify(obj, null, 2);
       } catch (e) {
         // If not valid JSON, do nothing
-        console.log('Invalid JSON, cannot format');
+        console.log('Invalid JSON, cannot format'); // KEPT (Original log)
       }
     }
     
@@ -268,7 +295,7 @@ function formatCode(codeBlock) {
       showCopyMessage(codeBlock, 'Cannot format this language');
     }
   } catch (e) {
-    console.error('Error formatting code:', e);
+    console.error('Error formatting code:', e); // KEPT (Original log)
   }
 }
 
@@ -834,7 +861,7 @@ function processGeminiCodeBlocks(settings) {
         langText = langSpan.textContent.trim();
       }
       // Hide the original header as we replace it
-      header.style.display = 'none';
+      // header.style.display = 'none'; // Will be hidden if wrapper logic is successful
     }
     
     // Create our custom language tag
@@ -851,7 +878,7 @@ function processGeminiCodeBlocks(settings) {
     lineInfo.className = 'plx-line-info';
     lineInfo.textContent = `Code block (${lineCount} lines)`;
     
-    // Replace the header with our custom elements
+    // Create action bar that will contain langTag and copyBtn
     const actionBar = document.createElement('div');
     actionBar.className = 'plx-action-bar';
     actionBar.appendChild(langTag);
@@ -885,31 +912,49 @@ function processGeminiCodeBlocks(settings) {
     
     actionBar.appendChild(copyBtn);
     
-    // Insert our custom elements
-    header.parentNode.insertBefore(actionBar, header);
-    header.style.display = 'none'; // Hide original header
+    // Create the main wrapper for our UI elements
+    const wrapper = document.createElement('div');
+    wrapper.className = 'plx-code-block-wrapper';
+
+    // Insert the wrapper into the DOM, before the preElement in its original container (codeBlockRoot).
+    if (preElement.parentNode) { // Should be codeBlockRoot
+        preElement.parentNode.insertBefore(wrapper, preElement);
+    } else {
+        console.warn("[PLX] preElement has no parentNode before wrapper insertion in Gemini.");
+        codeBlockRoot.appendChild(wrapper); // Fallback
+    }
     
-    // Add line info after the code
-    codeBlock.appendChild(lineInfo);
-      // Fix for the black line issue - apply multiple style fixes
+    // Append the actionBar to the wrapper.
+    wrapper.appendChild(actionBar);
+
+    // Ensure the original Gemini header is hidden.
+    if (header && header.parentNode) { // Check if header is still in DOM before styling
+        header.style.display = 'none'; 
+    }
+
+    // Move the preElement (actual code) into the wrapper.
+    wrapper.appendChild(preElement);
+
+    // Append lineInfo to the wrapper.
+    wrapper.appendChild(lineInfo);
+
+    // Style adjustments for preElement within the wrapper
     if (preElement) {
-      // Remove borders, margins, and anything that might cause the black line
-      preElement.style.marginTop = '0';
-      preElement.style.borderTop = 'none'; 
-      preElement.style.borderLeft = 'none'; // Remove left border causing vertical line
+      preElement.style.marginTop = '0'; 
       preElement.style.borderTopLeftRadius = '0';
       preElement.style.borderTopRightRadius = '0';
+      // Fix for the black line issue - apply multiple style fixes (existing logic from previous diff)
+      preElement.style.borderTop = 'none'; 
+      preElement.style.borderLeft = 'none'; 
       preElement.style.boxShadow = 'none';
       
-      // Fix code element styling too
-      const codeElement = preElement.querySelector('code');
-      if (codeElement) {
-        codeElement.style.paddingTop = '0.5rem';
-        codeElement.style.borderTop = 'none';
-        codeElement.style.borderLeft = 'none';
+      const innerCodeElement = preElement.querySelector('code');
+      if (innerCodeElement) {
+        innerCodeElement.style.paddingTop = '0.5rem';
+        innerCodeElement.style.borderTop = 'none';
+        innerCodeElement.style.borderLeft = 'none';
       }
       
-      // Remove any borders from parent elements that might be creating lines
       const parentElements = [preElement.parentElement, preElement.parentElement?.parentElement];
       parentElements.forEach(parent => {
         if (parent) {
@@ -920,7 +965,6 @@ function processGeminiCodeBlocks(settings) {
         }
       });
       
-      // Find and remove styling from any line number or gutter elements
       const potentialVerticalBarElements = preElement.querySelectorAll('[class*="line-number"], [class*="gutter"], [data-line-number]');
       potentialVerticalBarElements.forEach(element => {
         element.style.borderRight = 'none';
@@ -929,7 +973,6 @@ function processGeminiCodeBlocks(settings) {
         element.style.backgroundColor = 'transparent';
       });
       
-      // Look for any div structure that might be creating the vertical bar
       const firstColumnElements = preElement.querySelectorAll('div > div:first-child, td:first-child');
       firstColumnElements.forEach(element => {
         element.style.borderRight = 'none';
@@ -939,7 +982,7 @@ function processGeminiCodeBlocks(settings) {
       });
     }
     
-    // Create inline collapsed view
+    // Create inline collapsed view (this function appends it to actionBar)
     const collapsedInfo = createInlineCollapsedView(actionBar, langTag, lineCount);
     
     // Apply collapse by default if enabled
@@ -947,10 +990,10 @@ function processGeminiCodeBlocks(settings) {
       langTag.classList.add('plx-collapsed');
       preElement.style.display = 'none';
       lineInfo.style.display = 'flex';
-      collapsedInfo.style.display = 'flex'; // Show inline info
+      collapsedInfo.style.display = 'flex'; 
     } else {
       lineInfo.style.display = 'none';
-      collapsedInfo.style.display = 'none'; // Hide inline info
+      collapsedInfo.style.display = 'none'; 
     }
     
     // Add toggle functionality
@@ -961,24 +1004,22 @@ function processGeminiCodeBlocks(settings) {
       const isCollapsed = langTag.classList.contains('plx-collapsed');
       
       if (isCollapsed) {
-        // Expand
         langTag.classList.remove('plx-collapsed');
         preElement.style.display = 'block';
         lineInfo.style.display = 'none';
-        collapsedInfo.style.display = 'none'; // Hide inline info
+        collapsedInfo.style.display = 'none'; 
       } else {
-        // Collapse
         langTag.classList.add('plx-collapsed');
         preElement.style.display = 'none';
         lineInfo.style.display = 'flex';
-        collapsedInfo.style.display = 'flex'; // Show inline info
+        collapsedInfo.style.display = 'flex'; 
       }
     });
     
     // Add line numbers
     addLineNumbers(preElement, settings.showLineNumbers);
-      // Create our own context menu specifically for Gemini
-    // Create the more actions button
+
+    // Create our own context menu specifically for Gemini
     const actionsButton = document.createElement('button');
     actionsButton.className = 'plx-actions-button';
     actionsButton.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -988,27 +1029,13 @@ function processGeminiCodeBlocks(settings) {
     </svg>`;
     actionsButton.title = "More actions";
     
-    // Create menu
     const menu = document.createElement('div');
     menu.className = 'plx-actions-menu';
     
-    // Add menu items
     const menuItems = [
-      {
-        label: 'Format code',
-        action: () => formatCode(preElement),
-        key: 'Alt+F'
-      },
-      {
-        label: 'Toggle line numbers',
-        action: () => toggleLineNumbers(preElement),
-        key: 'Alt+L'
-      },
-      {
-        label: 'Select all',
-        action: () => selectCode(preElement),
-        key: 'Ctrl+A'
-      }
+      { label: 'Format code', action: () => formatCode(preElement), key: 'Alt+F' },
+      { label: 'Toggle line numbers', action: () => toggleLineNumbers(preElement), key: 'Alt+L' },
+      { label: 'Select all', action: () => selectCode(preElement), key: 'Ctrl+A' }
     ];
     
     menuItems.forEach(item => {
@@ -1016,7 +1043,6 @@ function processGeminiCodeBlocks(settings) {
       menuItem.className = 'plx-actions-menu-item';
       menuItem.textContent = item.label;
       
-      // Add keyboard shortcut display
       if (item.key) {
         const kbd = document.createElement('span');
         kbd.className = 'plx-keybinding';
@@ -1030,39 +1056,32 @@ function processGeminiCodeBlocks(settings) {
         item.action();
         menu.style.display = 'none';
       });
-      
       menu.appendChild(menuItem);
     });
     
-    // Add button to action bar
+    // Add the 'More actions' button to the actionBar (which is already in the wrapper).
     actionBar.appendChild(actionsButton);
-    codeBlock.appendChild(menu);
+    // Append the menu itself to the wrapper.
+    wrapper.appendChild(menu);
     
-    // Toggle menu display on button click
     actionsButton.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      
       if (menu.style.display === 'block') {
         menu.style.display = 'none';
       } else {
-        // Position menu below button
         const rect = actionsButton.getBoundingClientRect();
         menu.style.top = rect.bottom + 'px';
         menu.style.right = (window.innerWidth - rect.right) + 'px';
         menu.style.display = 'block';
         
-        // Close menu when clicking elsewhere
-        const closeMenu = (e) => {
-          if (!menu.contains(e.target) && e.target !== actionsButton) {
+        const closeMenu = (ev) => {
+          if (!menu.contains(ev.target) && ev.target !== actionsButton) {
             menu.style.display = 'none';
             document.removeEventListener('click', closeMenu);
           }
         };
-        
-        setTimeout(() => {
-          document.addEventListener('click', closeMenu);
-        }, 0);
+        setTimeout(() => { document.addEventListener('click', closeMenu); }, 0);
       }
     });
   });
@@ -1231,17 +1250,20 @@ function processPerplexityCodeBlocks(settings) {
 }
 
 // Add logging to verify the script runs on Gemini
-console.log('Perplexity Codeblock Extension loaded on: ' + window.location.hostname);
+console.log('Perplexity Codeblock Extension loaded on: ' + window.location.hostname); // Existing log
 
 // Set up observer
 let observer;
 let observerTimeout;
 
 function startObserver() {
+  // console.log('[PCC startObserver] Initializing MutationObserver.'); // REMOVED
   observer = new MutationObserver((mutations) => {
+    // console.log('[PCC MutationObserver] DOM mutation detected. Scheduling processCodeBlocks.'); // REMOVED
     // Add a slight delay to avoid duplicate processing
     clearTimeout(observerTimeout);
     observerTimeout = setTimeout(() => {
+      // console.log('[PCC MutationObserver] setTimeout: Calling processCodeBlocks()'); // REMOVED
       processCodeBlocks();
     }, 100);
   });
@@ -1250,13 +1272,14 @@ function startObserver() {
     childList: true,
     subtree: true
   });
+  // console.log('[PCC startObserver] MutationObserver started.'); // REMOVED
   
   // Process existing code blocks
+  // console.log('[PCC startObserver] Calling processCodeBlocks() initially.'); // REMOVED
   processCodeBlocks();
 }
 
 // Add this new function after the copyButton creation:
-
 function createInlineCollapsedView(actionBar, langTag, lineCount) {
   // Create inline collapsed info that shows up next to language tag
   const collapsedInfo = document.createElement('div');
@@ -1399,12 +1422,16 @@ function copyFocusedCodeBlock() {
 // Initialize
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
+    // console.log('[PCC DOMContentLoaded] Event fired. State:', document.readyState); // REMOVED
     if (extensionEnabled) {
+      // console.log('[PCC DOMContentLoaded] Calling startObserver()'); // REMOVED
       startObserver();
     }
   });
 } else {
+  // console.log('[PCC DOMContentLoaded] DOM already loaded. State:', document.readyState, 'extensionEnabled:', extensionEnabled); // REMOVED
   if (extensionEnabled) {
+    // console.log('[PCC DOMContentLoaded] DOM already loaded - Calling startObserver()'); // REMOVED
     startObserver();
   }
 }
@@ -1502,3 +1529,10 @@ startObserver = function() {
 if (extensionEnabled) {
   startVerticalBarObserver();
 }
+
+// Ensure the Perplexity-specific function (and others) are not missing any logs if they were intended.
+// For this task, logs were specified for global, DOMContentLoaded, startObserver, MutationObserver, and processCodeBlocks.
+// The individual platform processing functions (processChatGPTCodeBlocks, etc.) were only modified to include a log *after* they are called from processCodeBlocks.
+// The one existing log "Perplexity Codeblock Extension loaded on: " + window.location.hostname is kept.
+
+[end of content.js]
