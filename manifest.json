@@ -1,19 +1,21 @@
 {
   "manifest_version": 3,
   "name": "Perplexity Codeblock",
-  "version": "1.0",
-  "description": "Enhances code blocks on Perplexity and Gemini",
-  "permissions": ["storage"],
+  "version": "1.1.0",
+  "description": "Enhances code blocks on ChatGPT, Claude, Gemini, Perplexity, and other sites.",
+  "permissions": ["storage", "activeTab"],
   "content_scripts": [
     {
       "matches": [
         "https://www.perplexity.ai/*",
         "https://gemini.google.com/*",
         "https://chat.openai.com/*",
-        "https://claude.ai/*"
+        "https://claude.ai/*",
+        "*://*/*" 
       ],
       "js": ["content.js"],
-      "css": ["styles.css"]
+      "css": ["styles.css"],
+      "run_at": "document_idle"
     }
   ],
   "action": {
@@ -22,6 +24,25 @@
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "commands": {
+    "toggle_all_code_blocks": {
+      "suggested_key": {
+        "default": "Alt+Shift+C",
+        "mac": "Alt+Shift+C"
+      },
+      "description": "Toggle collapse for all code blocks on the page"
+    },
+    "copy_current_code": {
+      "suggested_key": {
+        "default": "Alt+Shift+X",
+        "mac": "Alt+Shift+X"
+      },
+      "description": "Copy the current or focused code block"
     }
   },
   "icons": {
